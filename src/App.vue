@@ -3,6 +3,9 @@ import { RouterLink, RouterView } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue';
 import axios from 'axios';
 import { ref } from 'vue';
+import router from './router';
+
+const currentUserId = 1;
 
 let users = ref([]);
 axios.get('/api/users')
@@ -10,17 +13,52 @@ axios.get('/api/users')
     console.log({ res });
     users.value = res.data;
   });
+
+let conversations = ref([]);
+axios.get('/api/conversations/latest', {
+  params: {
+    currentUserId,
+  }
+}).then((res) => {
+  console.log({ res });
+  conversations.value = res.data;
+});
+
+const openConversations = (conversation) => {
+  console.log({ conversation });
+  router.push({ name: "conversation", params: { conversationId: conversation.id } })
+}
 </script>
 
 <template>
-  <p v-for="user of users" :key="user.id">
+  <div v-for="user of users" :key="user.id">
     {{ user.fullname }}
-  </p>
+  </div>
+
+  <div class="conversations">
+    <div class="conversation" v-for="conversation of conversations" :key="conversation.id"
+      @click="() => openConversations(conversation)">
+      <div class="target">
+        {{ conversation.senderUserId == currentUserId ? conversation.receiverUserId : conversation.senderUserId }}
+      </div>
+      <div class="latest">
+        {{ conversation._latestChat?.message }}
+        {{ conversation._latestChat?.createdAt }}
+      </div>
+    </div>
+  </div>
 
   <RouterView />
 </template>
 
 <style scoped>
+.conversation {
+  border: solid thin black;
+  padding: 10px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
 .logo {
   display: block;
   margin: 0 auto 2rem;
